@@ -11,7 +11,6 @@ AutoName: Oxu
 
 RepoType: git
 Repo: https://github.com/Prestgg1/oxu
-Binaries: https://github.com/Prestgg1/oxu/releases/download/v%v/app-release.apk
 
 Builds:
   - versionName: 1.0.0
@@ -20,14 +19,6 @@ Builds:
     gradle:
       - yes
     output: app/build/outputs/apk/release/*-release-unsigned.apk
-    srclibs:
-      - reproducible-apk-tools@v0.3.2
-    postbuild:
-      - mv $$OUT$$ unaligned.apk
-      - $$reproducible-apk-tools$$/zipalign.py --page-size 16 --pad-like-apksigner
-        --replace unaligned.apk $$OUT$$
-
-AllowedAPKSigningKeys: 878da0d95a3b6820e26f961d150c320013ff18659cd4183c548dc849a4c8ff0b
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
