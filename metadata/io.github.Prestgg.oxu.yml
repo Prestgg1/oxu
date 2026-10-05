@@ -1,0 +1,28 @@
+Categories:
+  - Reading
+  - Translation
+License: GPL-3.0-or-later
+AuthorName: Prestgg1
+AuthorEmail: prestgg12@gmail.com
+SourceCode: https://github.com/Prestgg1/oxu
+IssueTracker: https://github.com/Prestgg1/oxu/issues
+
+AutoName: Oxu
+
+RepoType: git
+Repo: https://github.com/Prestgg1/oxu
+Binaries: https://github.com/Prestgg1/oxu/releases/download/v%v/app-release.apk
+
+Builds:
+  - versionName: 1.0.0
+    versionCode: 1
+    commit: 9fbf6e88327c477e1baa2da3de3393522b2a504e
+    gradle:
+      - yes
+
+AllowedAPKSigningKeys: 878da0d95a3b6820e26f961d150c320013ff18659cd4183c548dc849a4c8ff0b
+
+AutoUpdateMode: Version
+UpdateCheckMode: Tags
+CurrentVersion: 1.0.0
+CurrentVersionCode: 1
