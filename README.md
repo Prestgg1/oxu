@@ -26,9 +26,17 @@ only ever pick the language you want to *read* in.
 
 ## Screenshots
 
-| Home | Reader | Translation |
-| --- | --- | --- |
-| _coming soon_ | _coming soon_ | _coming soon_ |
+| Home | Reading a PDF |
+| --- | --- |
+| ![Home](fastlane/metadata/android/en-US/images/phoneScreenshots/1.png) | ![Reader](fastlane/metadata/android/en-US/images/phoneScreenshots/2.png) |
+
+| Selecting text | Translating |
+| --- | --- |
+| ![Selection](fastlane/metadata/android/en-US/images/phoneScreenshots/3.png) | ![Translation](fastlane/metadata/android/en-US/images/phoneScreenshots/4.png) |
+
+| Choosing a language | Settings |
+| --- | --- |
+| ![Languages](fastlane/metadata/android/en-US/images/phoneScreenshots/5.png) | ![Settings](fastlane/metadata/android/en-US/images/phoneScreenshots/6.png) |
 
 ## Download
 
