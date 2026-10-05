@@ -1,6 +1,6 @@
 Categories:
-  - Reading
-  - Translation
+  - Ebook Reader
+  - Translation & Dictionary
 License: GPL-3.0-or-later
 AuthorName: Prestgg1
 AuthorEmail: prestgg12@gmail.com
@@ -19,6 +19,13 @@ Builds:
     commit: 9fbf6e88327c477e1baa2da3de3393522b2a504e
     gradle:
       - yes
+    output: app/build/outputs/apk/release/*-release-unsigned.apk
+    srclibs:
+      - reproducible-apk-tools@v0.3.2
+    postbuild:
+      - mv $$OUT$$ unaligned.apk
+      - $$reproducible-apk-tools$$/zipalign.py --page-size 16 --pad-like-apksigner
+        --replace unaligned.apk $$OUT$$
 
 AllowedAPKSigningKeys: 878da0d95a3b6820e26f961d150c320013ff18659cd4183c548dc849a4c8ff0b
 
