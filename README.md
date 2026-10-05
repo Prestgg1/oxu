@@ -1,5 +1,8 @@
 # Oxu
 
+![Build](https://github.com/Prestgg1/oxu/actions/workflows/build.yml/badge.svg)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
+
 **Read PDFs and translate any text you select — instantly.**
 
 Oxu extracts the text of a PDF page by page, lets you select a sentence, and
