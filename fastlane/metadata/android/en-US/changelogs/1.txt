@@ -1,0 +1,6 @@
+First release.
+
+* Read PDFs page by page and translate any text you select
+* 21 target languages
+* MyMemory and LibreTranslate backends
+* Recent files, adjustable text size, dark theme

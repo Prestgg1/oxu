@@ -1,0 +1,27 @@
+Oxu turns a PDF into text you can read and translate.
+
+**How it works**
+
+1. Open a PDF, the text of the page appears on screen
+2. Long-press to select the sentence you want
+3. Tap "Translate" and read it in your own language
+
+**What you get**
+
+* Page-by-page text extraction, no account, no ads, no tracking
+* 21 target languages, including English, Turkish, Azerbaijani, Russian, German, Spanish, Arabic, Chinese and Japanese
+* Adjustable text size and a dark theme
+* Recent files that remember the page you stopped at
+* Opens PDFs from any file manager, or by sharing them into Oxu
+* Two translation backends: MyMemory (free, no API key, daily limit) or LibreTranslate (your own server, no limits)
+
+**Privacy**
+
+Oxu has no analytics. The only network request is the translation of the text
+you selected, sent to the service you chose in Settings. If you run your own
+LibreTranslate server, the text never leaves your own infrastructure.
+
+**Requirements**
+
+Android 8.0 (API 26) or newer. Scanned or image-only PDFs contain no text to
+extract, so they are not supported.
