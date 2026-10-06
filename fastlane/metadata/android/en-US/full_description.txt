@@ -1,27 +1,27 @@
-Oxu turns a PDF into text you can read and translate.
+<b>Oxu</b> turns a PDF into text you can read and translate.
 
-**How it works**
+<p><b>How it works</b></p>
+<ol>
+<li>Open a PDF, the text of the page appears on screen</li>
+<li>Long-press to select the sentence you want</li>
+<li>Tap &quot;Translate&quot; and read it in your own language</li>
+</ol>
 
-1. Open a PDF, the text of the page appears on screen
-2. Long-press to select the sentence you want
-3. Tap "Translate" and read it in your own language
+<p><b>What you get</b></p>
+<ul>
+<li>Page-by-page text extraction, no account, no ads, no tracking</li>
+<li>21 target languages, including English, Turkish, Azerbaijani, Russian, German, Spanish, Arabic, Chinese and Japanese</li>
+<li>Adjustable text size and a dark theme</li>
+<li>Recent files that remember the page you stopped at</li>
+<li>Opens PDFs from any file manager, or by sharing them into Oxu</li>
+<li>Two translation backends: MyMemory (free, no API key, daily limit) or LibreTranslate (your own server, no limits)</li>
+</ul>
 
-**What you get**
+<p><b>Privacy</b></p>
+<p>Oxu has no analytics. The only network request is the translation of the
+text you selected, sent to the service you chose in Settings. If you run your
+own LibreTranslate server, the text never leaves your own infrastructure.</p>
 
-* Page-by-page text extraction, no account, no ads, no tracking
-* 21 target languages, including English, Turkish, Azerbaijani, Russian, German, Spanish, Arabic, Chinese and Japanese
-* Adjustable text size and a dark theme
-* Recent files that remember the page you stopped at
-* Opens PDFs from any file manager, or by sharing them into Oxu
-* Two translation backends: MyMemory (free, no API key, daily limit) or LibreTranslate (your own server, no limits)
-
-**Privacy**
-
-Oxu has no analytics. The only network request is the translation of the text
-you selected, sent to the service you chose in Settings. If you run your own
-LibreTranslate server, the text never leaves your own infrastructure.
-
-**Requirements**
-
-Android 8.0 (API 26) or newer. Scanned or image-only PDFs contain no text to
-extract, so they are not supported.
+<p><b>Requirements</b></p>
+<p>Android 8.0 (API 26) or newer. Scanned or image-only PDFs contain no text to
+extract, so they are not supported.</p>
