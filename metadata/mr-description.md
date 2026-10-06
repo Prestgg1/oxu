@@ -46,7 +46,7 @@ https://gitlab.com/fdroid/fdroiddata/-/merge_requests/new?merge_request%5Bsource
 ### Pipeline
 
 * [x] All pipelines should pass.
-* [x] All warnings and errors in the Reports tab should be fixed or explained.
+* [x] All warnings and errors in the Reports tab should be fixed or explained. The only warning in the `check apk` job is `WARNING: Requested API level 36 is larger than maximum we have, returning API level 28 instead.` (and the same from `androguard`). That comes from the scanner not knowing targetSdk 36 yet, not from anything in the app or the metadata.
 * [x] F-Droid CI runners are under GitLab's FOSS program.
 
 ## Notes
@@ -60,8 +60,9 @@ detected by the translation service, so only the target language is picked by ha
 * Only permission is `INTERNET`, used for the translation request the user triggers
 * Translation backends: MyMemory (free, no key) or a self-hosted LibreTranslate
 * minSdk 26, targetSdk 36, AGP 9.4.1 with built-in Kotlin, Gradle wrapper committed
-* `output:` is set because the Gradle root is the repository root while the APK is
-  produced by the `app` module
+* `subdir: app` is the Gradle module directory, which is where the `build/`
+  directory is generated; the Gradle root is the repository root
+  (`settings.gradle.kts` there includes `:app`)
 * The release signing key is not in the repository. `app/build.gradle.kts` only signs
   the release build when a git-ignored `keystore.properties` is present, so the
   build recipe produces an unsigned APK as expected
