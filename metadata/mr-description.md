@@ -60,6 +60,7 @@ detected by the translation service, so only the target language is picked by ha
 * Only permission is `INTERNET`, used for the translation request the user triggers
 * Translation backends: MyMemory (free, no key) or a self-hosted LibreTranslate
 * minSdk 26, targetSdk 36, AGP 9.4.1 with built-in Kotlin, Gradle wrapper committed
+* Release builds are minified with R8 (7.4 MB APK)
 * `subdir: app` is the Gradle module directory, which is where the `build/`
   directory is generated; the Gradle root is the repository root
   (`settings.gradle.kts` there includes `:app`)
