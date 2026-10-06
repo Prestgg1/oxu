@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 package io.github.Prestgg.oxu.ui
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -42,6 +43,7 @@ import io.github.Prestgg.oxu.data.Prefs
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(app: AppState, onBack: () -> Unit) {
+    BackHandler(onBack = onBack)
     val prefs = app.prefs
     var showLang by remember { mutableStateOf(false) }
 

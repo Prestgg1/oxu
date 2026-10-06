@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 package io.github.Prestgg.oxu.ui
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -70,6 +71,7 @@ private sealed interface TState {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ReaderScreen(app: AppState, onBack: () -> Unit) {
+    BackHandler(onBack = onBack)
     val source = app.source
     val prefs = app.prefs
     if (source == null) {

@@ -22,6 +22,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -35,12 +36,16 @@ import io.github.Prestgg.oxu.ui.Screen
 import io.github.Prestgg.oxu.ui.SettingsScreen
 
 class MainActivity : ComponentActivity() {
+
+    private val incomingPdf = mutableStateOf<Uri?>(null)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+        incomingPdf.value = intent.pdfUri()
         setContent {
             val app = remember { AppState(applicationContext) }
-            val incoming = remember { intent.pdfUri() }
+            val incoming = incomingPdf.value
             LaunchedEffect(incoming) { incoming?.let { app.open(it) } }
             DisposableEffect(app) { onDispose { app.dispose() } }
             OxuTheme {
@@ -109,6 +114,12 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        incomingPdf.value = intent.pdfUri()
     }
 }
 
