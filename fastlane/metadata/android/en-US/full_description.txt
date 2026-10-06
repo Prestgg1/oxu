@@ -14,13 +14,15 @@
 <li>Adjustable text size and a dark theme</li>
 <li>Recent files that remember the page you stopped at</li>
 <li>Opens PDFs from any file manager, or by sharing them into Oxu</li>
-<li>Two translation backends: MyMemory (free, no API key, daily limit) or LibreTranslate (your own server, no limits)</li>
+<li>Two translation backends: MyMemory (an online service, free, no API key, daily limit) or LibreTranslate (your own server, no limits)</li>
 </ul>
 
 <p><b>Privacy</b></p>
-<p>Oxu has no analytics. The only network request is the translation of the
-text you selected, sent to the service you chose in Settings. If you run your
-own LibreTranslate server, the text never leaves your own infrastructure.</p>
+<p>Oxu has no analytics. Reading a PDF works entirely offline. The only network
+request is the translation of the text you selected, sent to the service you chose
+in Settings. Translation needs an online service unless you run your own
+LibreTranslate server, in which case the text never leaves your own
+infrastructure.</p>
 
 <p><b>Requirements</b></p>
 <p>Android 8.0 (API 26) or newer. Scanned or image-only PDFs contain no text to

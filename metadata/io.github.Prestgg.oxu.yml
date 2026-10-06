@@ -2,6 +2,8 @@ Categories:
   - Ebook Reader
   - Translation & Dictionary
 License: GPL-3.0-or-later
+AntiFeatures:
+  - NonFreeNet
 AuthorName: Prestgg1
 AuthorEmail: prestgg12@gmail.com
 SourceCode: https://github.com/Prestgg1/oxu
