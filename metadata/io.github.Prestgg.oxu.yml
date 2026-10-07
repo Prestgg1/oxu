@@ -1,5 +1,10 @@
 AntiFeatures:
-  - NonFreeNet
+  NonFreeNet:
+    en-US: |-
+      Translating sends the selected text to MyMemory, a proprietary online
+      service, which is the default backend. Reading PDFs works entirely offline.
+      You can point Oxu at your own LibreTranslate server in Settings instead, and
+      then no text leaves your own infrastructure.
 Categories:
   - Ebook Reader
   - Translation & Dictionary
@@ -21,14 +26,6 @@ Builds:
     subdir: app
     gradle:
       - yes
-
-MaintainerNotes: |-
-  Anti-Features:
-  NonFreeNet: the default translation backend is MyMemory
-  (api.mymemory.translated.net), a proprietary online service, so translating
-  depends on a non-free network service. Reading PDFs works entirely offline.
-  Users can switch to any LibreTranslate server they run themselves in Settings,
-  and then no text leaves their own infrastructure.
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
