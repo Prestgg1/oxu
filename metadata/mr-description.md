@@ -58,9 +58,9 @@ https://gitlab.com/fdroid/fdroiddata/-/merge_requests/new?merge_request%5Bsource
   at any LibreTranslate server they run themselves, and then no text leaves their
   own infrastructure.
 
-The same reason is recorded in `MaintainerNotes` in the metadata file, and the
-store description states that translation needs an online service unless you run
-your own LibreTranslate server.
+The reason is recorded on the AntiFeature itself, where F-Droid shows it next to
+the flag, and the store description states that translation needs an online
+service unless you run your own LibreTranslate server.
 
 ## Notes
 
