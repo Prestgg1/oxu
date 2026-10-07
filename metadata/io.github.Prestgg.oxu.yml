@@ -1,10 +1,12 @@
 AntiFeatures:
   NonFreeNet:
-    en-US: |-
-      Translating sends the selected text to MyMemory, a proprietary online
+    en-US: "Translating sends the selected text to MyMemory, a proprietary online
+
       service, which is the default backend. Reading PDFs works entirely offline.
+
       You can point Oxu at your own LibreTranslate server in Settings instead, and
-      then no text leaves your own infrastructure.
+
+      then no text leaves your own infrastructure."
 Categories:
   - Ebook Reader
   - Translation & Dictionary
