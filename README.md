@@ -80,6 +80,39 @@ Then:
 Without `keystore.properties` the release build simply stays unsigned, which is
 what F-Droid and CI need.
 
+### Reproducible release build
+
+F-Droid builds Oxu from source and publishes the result under **our** signing
+key. For that to work, the build has to be byte-for-byte reproducible, so it has
+to run exactly like F-Droid's does:
+
+```bash
+git clone https://github.com/Prestgg1/oxu.git && cd oxu
+git checkout v1.0.0                    # a clean tree at the tagged commit
+export JAVA_HOME=/path/to/jdk-21       # F-Droid builds with JDK 21
+
+cd app                                  # the Gradle module, i.e. F-Droid's `subdir`
+../gradlew assembleRelease
+
+# same alignment F-Droid applies in its postbuild step
+git clone https://gitlab.com/fdroid/reproducible-apk-tools.git
+python3 ../reproducible-apk-tools/zipalign.py --page-size 16 --pad-like-apksigner \
+    --replace app/build/outputs/apk/release/app-release-unsigned.apk aligned.apk
+
+apksigner sign --ks <your.keystore> --v1-signing-enabled false aligned.apk
+```
+
+The four things that have to match, because each of them changes the bytes:
+
+| | |
+| --- | --- |
+| **JDK 21** | a different JDK produces a slightly different `classes.dex` |
+| **Clean tree at the tagged commit** | AGP embeds the git state in `META-INF/version-control-info.textproto` |
+| **`app/` as the build root** | matches `subdir` in the build metadata |
+| **The `zipalign.py` call above** | v1 signing must stay off, otherwise `META-INF/*.SF` files are added |
+
+If you only care about running the app, `./gradlew :app:assembleDebug` is enough.
+
 ## Privacy
 
 Oxu has no analytics and no network calls other than the translation request
