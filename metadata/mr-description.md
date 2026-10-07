@@ -37,7 +37,7 @@ https://gitlab.com/fdroid/fdroiddata/-/merge_requests/new?merge_request%5Bsource
 * [x] There is an issue tracker and contact info of the author so that we can report bugs and contact the author.
 * [x] An AuthorName must be added. It doesn't need to be the real name.
 * [x] External repos are added as git submodules instead of srclibs.
-* [ ] Enable [Reproducible Builds](https://f-droid.org/docs/Reproducible_Builds). Reason: I tried, and the signature copy verified (v2 and v3) but the rebuilt APK does not match my local build byte for byte — the `CHUNKED_SHA512` digest differs, so the toolchain still produces different output. I did pin what I could (Gradle 9.7.1 via the committed wrapper, AGP 9.4.1, build-tools 36, JDK 17) and I sign the upstream release with `zipalign -P 16` + `apksigner`, but I would like help to find the remaining difference. I understand the APK will then be signed with your key, and that this cannot be changed later.
+* [x] Enable [Reproducible Builds](https://f-droid.org/docs/Reproducible_Builds). Done: `Binaries`, `AllowedAPKSigningKeys` and the `reproducible-apk-tools` postbuild are set. The build has to match F-Droid's exactly, which means JDK 21 (their build image uses openjdk-21) instead of 17, a clean checkout of the tagged commit, and the same `zipalign.py` call. My CI now reports a reproducible build APK signed with our key.
 * [x] Setup abi split if the APK is large and the splitted ones can be much smaller. Not needed: 16 MB universal APK, no native ABI-specific code.
 * [x] Only the latest versions should be kept in the metadata before it's merged.
 * [x] Don't add any disabled versions in the metadata.
