@@ -22,6 +22,14 @@ Builds:
     gradle:
       - yes
 
+MaintainerNotes: |-
+  Anti-Features:
+  NonFreeNet: the default translation backend is MyMemory
+  (api.mymemory.translated.net), a proprietary online service, so translating
+  depends on a non-free network service. Reading PDFs works entirely offline.
+  Users can switch to any LibreTranslate server they run themselves in Settings,
+  and then no text leaves their own infrastructure.
+
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
 CurrentVersion: 1.0.0
