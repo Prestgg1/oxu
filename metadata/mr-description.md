@@ -49,6 +49,19 @@ https://gitlab.com/fdroid/fdroiddata/-/merge_requests/new?merge_request%5Bsource
 * [x] All warnings and errors in the Reports tab should be fixed or explained. The only warning in the `check apk` job is `WARNING: Requested API level 36 is larger than maximum we have, returning API level 28 instead.` (and the same from `androguard`). That comes from the scanner not knowing targetSdk 36 yet, not from anything in the app or the metadata.
 * [x] F-Droid CI runners are under GitLab's FOSS program.
 
+## Anti-Features
+
+* **NonFreeNet** — the default translation backend is MyMemory
+  (`api.mymemory.translated.net`), a proprietary online service, so translating
+  depends on a non-free network service. Reading PDFs works entirely offline, and
+  only the text the user selects is ever sent. In Settings the user can point Oxu
+  at any LibreTranslate server they run themselves, and then no text leaves their
+  own infrastructure.
+
+The same reason is recorded in `MaintainerNotes` in the metadata file, and the
+store description states that translation needs an online service unless you run
+your own LibreTranslate server.
+
 ## Notes
 
 Oxu (https://github.com/Prestgg1/oxu) is a small Kotlin/Jetpack Compose PDF reader: it
