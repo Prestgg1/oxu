@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -43,7 +44,7 @@ fun LanguagePicker(
     onDone: (String) -> Unit
 ) {
     var picked by remember { mutableStateOf(initial ?: Langs.all.first().code) }
-    Column(Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
+    Column(Modifier.fillMaxSize().navigationBarsPadding().padding(horizontal = 16.dp)) {
         Spacer(Modifier.height(48.dp))
         Text(title, style = MaterialTheme.typography.headlineSmall)
         Spacer(Modifier.height(6.dp))
