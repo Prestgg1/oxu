@@ -1,0 +1,3 @@
+<p>Fixes the first-run language screen on devices that use three-button navigation: the
+Continue button was partly underneath the navigation bar and only its upper part was
+tappable. It now sits above the bar.</p>
