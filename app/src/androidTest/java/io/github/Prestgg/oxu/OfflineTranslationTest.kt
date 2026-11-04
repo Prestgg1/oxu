@@ -3,7 +3,6 @@ package io.github.Prestgg.oxu
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
-import io.github.Prestgg.oxu.bergamot.Bergamot
 import io.github.Prestgg.oxu.offline.OfflineModels
 import io.github.Prestgg.oxu.offline.OfflineModels.PackState
 import io.github.Prestgg.oxu.offline.OfflineTranslator
@@ -38,12 +37,6 @@ class OfflineTranslationTest {
     }
 
     @Test
-    fun detectsLanguages() {
-        assertEquals("en", Bergamot.detect("The quick brown fox jumps over the lazy dog near the river bank.").code)
-        assertEquals("az", Bergamot.detect("Bu gün hava çox gözəldir və biz parka gəzməyə getdik.").code)
-    }
-
-    @Test
     fun downloadsAndTranslatesOffline() = runBlocking(Dispatchers.Main) {
         val models = OfflineModels(ctx, this)
         models.refreshCatalog(force = true)
@@ -55,25 +48,25 @@ class OfflineTranslationTest {
         val t = OfflineTranslator(models)
 
         val partials = ArrayList<String>()
-        val az = t.translate("The weather is very nice today. We went for a walk in the park.", "az") { partials += it }
+        val az = t.translate("The weather is very nice today. We went for a walk in the park.", "en", "az") { partials += it }
         android.util.Log.i("OxuTest", "en→az: $az")
         assertTrue(az.isNotBlank())
         assertNotEquals("The weather is very nice today. We went for a walk in the park.", az)
         assertTrue(az.contains("park", ignoreCase = true))
 
         // Not English on either side: goes through English (az → en → tr).
-        val tr = t.translate(az, "tr")
+        val tr = t.translate(az, "az", "tr")
         android.util.Log.i("OxuTest", "az→tr: $tr")
         assertTrue(tr.isNotBlank())
         assertNotEquals(az, tr)
 
         // Emoji / non-BMP characters survive the JNI boundary.
-        val emoji = t.translate("I love books 📚 and coffee ☕.", "az")
+        val emoji = t.translate("I love books 📚 and coffee ☕.", "en", "az")
         android.util.Log.i("OxuTest", "emoji: $emoji")
         assertTrue(emoji.contains("📚"))
 
         // Same language as the target: returned unchanged.
         assertEquals("Bu gün hava çox gözəldir və biz parka gəzməyə getdik.",
-            t.translate("Bu gün hava çox gözəldir və biz parka gəzməyə getdik.", "az"))
+            t.translate("Bu gün hava çox gözəldir və biz parka gəzməyə getdik.", "az", "az"))
     }
 }

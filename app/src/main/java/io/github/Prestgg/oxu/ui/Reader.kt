@@ -86,6 +86,7 @@ fun ReaderScreen(app: AppState, onBack: () -> Unit) {
     var fontSize by remember { mutableFloatStateOf(prefs.fontSize) }
     var showSheet by remember { mutableStateOf(false) }
     var sourceText by remember { mutableStateOf("") }
+    var showSource by remember { mutableStateOf(false) }
     val tFlow = remember { MutableStateFlow<TState>(TState.Idle) }
     val tState by tFlow.collectAsState()
 
@@ -119,7 +120,7 @@ fun ReaderScreen(app: AppState, onBack: () -> Unit) {
         translateJob = scope.launch {
             try {
                 val translator = app.translators.current()
-                val res = translator.translate(value, prefs.targetLang) { partial ->
+                val res = translator.translate(value, prefs.sourceLang, prefs.targetLang) { partial ->
                     if (isActive) tFlow.value = TState.Done(partial, partial = true)
                 }
                 ensureActive()
@@ -233,6 +234,16 @@ fun ReaderScreen(app: AppState, onBack: () -> Unit) {
         }
     }
 
+    if (showSource) {
+        SourceLanguageDialog(prefs.sourceLang, { code ->
+            showSource = false
+            if (code != prefs.sourceLang) {
+                prefs.sourceLang = code
+                translate(sourceText)
+            }
+        }) { showSource = false }
+    }
+
     if (showSheet) {
         ModalBottomSheet(onDismissRequest = {
             showSheet = false
@@ -245,11 +256,17 @@ fun ReaderScreen(app: AppState, onBack: () -> Unit) {
                     .heightIn(max = 520.dp)
                     .verticalScroll(rememberScrollState())
             ) {
-                Text(
-                    Langs.name(prefs.targetLang),
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.primary
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    // Tap the source language to change it and translate the selection again.
+                    TextButton(onClick = { showSource = true }) {
+                        Text(Langs.name(prefs.sourceLang), style = MaterialTheme.typography.titleLarge)
+                    }
+                    Text(
+                        "→  " + Langs.name(prefs.targetLang),
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
                 Spacer(Modifier.height(14.dp))
                 Text(
                     "Original",

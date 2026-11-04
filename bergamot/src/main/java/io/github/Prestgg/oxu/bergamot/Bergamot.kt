@@ -13,8 +13,6 @@ object Bergamot {
         System.loadLibrary("oxu-bergamot")
     }
 
-    data class Detection(val code: String, val reliable: Boolean, val percent: Int)
-
     /** Loads a model described by a Marian YAML [config]. No-op if [key] is already loaded. */
     fun load(key: String, config: String) = nativeLoad(key, config)
 
@@ -31,15 +29,6 @@ object Bergamot {
     fun pivot(firstKey: String, secondKey: String, texts: List<String>): List<String> =
         nativePivot(firstKey, secondKey, texts.toBytes()).fromBytes()
 
-    fun detect(text: String): Detection {
-        val parts = nativeDetect(text.toByteArray(Charsets.UTF_8)).split('\t')
-        return Detection(
-            code = parts.getOrNull(0).orEmpty(),
-            reliable = parts.getOrNull(1) == "1",
-            percent = parts.getOrNull(2)?.toIntOrNull() ?: 0
-        )
-    }
-
     private fun List<String>.toBytes(): Array<ByteArray> =
         Array(size) { this[it].toByteArray(Charsets.UTF_8) }
 
@@ -51,5 +40,4 @@ object Bergamot {
     private external fun nativeUnloadAll()
     private external fun nativeTranslate(key: String, inputs: Array<ByteArray>): Array<ByteArray>
     private external fun nativePivot(first: String, second: String, inputs: Array<ByteArray>): Array<ByteArray>
-    private external fun nativeDetect(text: ByteArray): String
 }

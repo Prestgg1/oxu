@@ -48,6 +48,7 @@ fun SettingsScreen(app: AppState, onBack: () -> Unit) {
     BackHandler(onBack = onBack)
     val prefs = app.prefs
     var showLang by remember { mutableStateOf(false) }
+    var showSource by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -69,6 +70,18 @@ fun SettingsScreen(app: AppState, onBack: () -> Unit) {
                 .padding(horizontal = 16.dp)
         ) {
             Spacer(Modifier.height(8.dp))
+
+            Card(onClick = { showSource = true }, modifier = Modifier.fillMaxWidth()) {
+                Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text("Source language", style = MaterialTheme.typography.labelLarge)
+                        Text(Langs.name(prefs.sourceLang), style = MaterialTheme.typography.titleLarge)
+                    }
+                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null)
+                }
+            }
+
+            Spacer(Modifier.height(10.dp))
 
             Card(onClick = { showLang = true }, modifier = Modifier.fillMaxWidth()) {
                 Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -169,14 +182,15 @@ fun SettingsScreen(app: AppState, onBack: () -> Unit) {
                 }
             }
 
-            Spacer(Modifier.height(24.dp))
-            Text(
-                "The source language is detected automatically — you only pick the target language.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
             Spacer(Modifier.height(32.dp))
         }
+    }
+
+    if (showSource) {
+        SourceLanguageDialog(prefs.sourceLang, { code ->
+            prefs.sourceLang = code
+            showSource = false
+        }) { showSource = false }
     }
 
     if (showLang) {

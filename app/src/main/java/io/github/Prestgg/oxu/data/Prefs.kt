@@ -23,6 +23,15 @@ class Prefs(app: Context) {
             sp.edit().putString(K_TARGET, v).apply()
         }
 
+    private val sourceState = mutableStateOf(sp.getString(K_SOURCE, DEFAULT_SOURCE) ?: DEFAULT_SOURCE)
+    /** Language of the documents being read; picked by hand, never detected. */
+    var sourceLang: String
+        get() = sourceState.value
+        set(v) {
+            sourceState.value = v
+            sp.edit().putString(K_SOURCE, v).apply()
+        }
+
     private val fontState = mutableFloatStateOf(sp.getFloat(K_FONT, 18f))
     var fontSize: Float
         get() = fontState.floatValue
@@ -117,6 +126,8 @@ class Prefs(app: Context) {
         private const val K_FALLBACK = "offline_fallback"
         private const val K_FONT = "font_size"
         private const val K_TARGET = "target_lang"
+        private const val K_SOURCE = "source_lang"
+        private const val DEFAULT_SOURCE = "en"
         private const val K_BACKEND = "backend"
         private const val K_URL = "libre_url"
         private const val K_KEY = "libre_key"

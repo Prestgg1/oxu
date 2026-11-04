@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
-// JNI bridge between Oxu and bergamot-translator / CLD2.
+// JNI bridge between Oxu and bergamot-translator.
 //
 // Strings cross the boundary as UTF-8 byte arrays rather than jstring:
 // GetStringUTFChars/NewStringUTF use "modified UTF-8", which mangles characters
@@ -19,8 +19,6 @@
 #include "translator/response.h"
 #include "translator/response_options.h"
 #include "translator/service.h"
-
-#include "compact_lang_det.h"
 
 using namespace marian::bergamot;
 
@@ -179,21 +177,4 @@ OXU_JNI(jobjectArray, nativePivot)(JNIEnv *env, jobject, jstring jfirst, jstring
         throwJava(env, e.what());
         return nullptr;
     }
-}
-
-// Returns "<code>\t<reliable 0|1>\t<percent>" (code is an ISO 639-1 code, "un" if unknown).
-OXU_JNI(jstring, nativeDetect)(JNIEnv *env, jobject, jbyteArray jtext) {
-    std::string text = toString(env, jtext);
-    CLD2::CLDHints hints = {nullptr, nullptr, 0, CLD2::UNKNOWN_LANGUAGE};
-    CLD2::Language language3[3];
-    int percent3[3];
-    double scores3[3];
-    int chunkBytes = 0;
-    bool reliable = false;
-    CLD2::ExtDetectLanguageSummary(text.data(), static_cast<int>(text.size()), /*is_plain_text=*/true,
-                                   &hints, 0, language3, percent3, scores3, nullptr, &chunkBytes,
-                                   &reliable);
-    std::string out = std::string(CLD2::LanguageCode(language3[0])) + "\t" +
-                      (reliable ? "1" : "0") + "\t" + std::to_string(percent3[0]);
-    return env->NewStringUTF(out.c_str());
 }

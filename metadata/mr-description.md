@@ -66,8 +66,8 @@ service unless you run your own LibreTranslate server.
 
 Oxu (https://github.com/Prestgg1/oxu) is a small Kotlin/Jetpack Compose PDF reader: it
 extracts the text of a PDF page by page, lets you select text with a long press and
-translates the selection into a language of your choice. The source language is
-detected by the translation service, so only the target language is picked by hand.
+translates the selection into a language of your choice. Both the source and the
+target language are picked by hand.
 
 * No proprietary dependencies: AndroidX/Compose (Apache-2.0) and PDFBox for Android (Apache-2.0)
 * Only permission is `INTERNET`, used for the translation request the user triggers

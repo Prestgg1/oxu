@@ -38,12 +38,4 @@ object Langs {
 
     /** Oxu code → Mozilla Firefox Translations code. */
     fun forBergamot(code: String): String = if (code == "zh-CN") "zh-Hans" else code
-
-    /** CLD2 language code → Oxu code (or the raw code when Oxu doesn't list the language). */
-    fun fromDetected(code: String): String? = when (code) {
-        "", "un", "xxx" -> null
-        "iw" -> "he"
-        "zh" -> "zh-CN"
-        else -> code
-    }
 }

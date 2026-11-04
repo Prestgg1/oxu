@@ -15,24 +15,20 @@ import java.io.File
 /**
  * On-device translation with Mozilla's bergamot engine.
  *
- * The source language is detected with CLD2. Pairs that don't involve English
- * are translated through it (two models), as Firefox does.
+ * The source language is the one picked in Settings. Pairs that don't involve
+ * English are translated through it (two models), as Firefox does.
  */
 class OfflineTranslator(private val models: OfflineModels) : Translator {
 
     override val label = "Offline"
 
-    override suspend fun translate(text: String, to: String, onPartial: (String) -> Unit): String {
+    override suspend fun translate(text: String, from: String, to: String, onPartial: (String) -> Unit): String {
         val t = text.trim()
         if (t.isEmpty()) return ""
+        if (from == to) return t
         if (!engineAvailable) throw TranslationException("Offline translation is not supported on this device.")
 
         return withContext(engine) {
-            val from = detect(t)
-            if (from == to) return@withContext t
-            if (Langs.byCode(from) == null) {
-                throw TranslationException("The text looks like ${Langs.name(from)}, which can't be translated offline.")
-            }
             val missing = listOf(from, to).filter { !models.isInstalled(it) }
             if (missing.isNotEmpty()) {
                 throw TranslationException(
@@ -61,15 +57,6 @@ class OfflineTranslator(private val models: OfflineModels) : Translator {
             }
             out.joinToString("\n\n")
         }
-    }
-
-    private fun detect(text: String): String {
-        val d = Bergamot.detect(text.take(4000))
-        val code = Langs.fromDetected(d.code)
-        if (code == null || code == "un") {
-            throw TranslationException("Couldn't detect the language of this text. Try selecting a longer passage.")
-        }
-        return code
     }
 
     /** Loads one direction into the engine (once) and returns its key. Codes are Oxu codes. */

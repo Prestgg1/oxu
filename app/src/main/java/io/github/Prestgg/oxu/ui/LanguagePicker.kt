@@ -60,15 +60,21 @@ fun LanguagePicker(
 }
 
 @Composable
-fun LanguagePickerDialog(current: String?, onPick: (String) -> Unit, onDismiss: () -> Unit) {
+fun LanguagePickerDialog(
+    current: String?,
+    onPick: (String) -> Unit,
+    title: String = "Target language",
+    description: String = "Text will be translated into this language.",
+    onDismiss: () -> Unit
+) {
     var picked by remember { mutableStateOf(current ?: Langs.all.first().code) }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Target language") },
+        title = { Text(title) },
         text = {
             Column {
                 Text(
-                    "PDF text will be translated into this language.",
+                    description,
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -80,6 +86,15 @@ fun LanguagePickerDialog(current: String?, onPick: (String) -> Unit, onDismiss: 
         dismissButton = { TextButton(onDismiss) { Text("Cancel") } }
     )
 }
+
+@Composable
+fun SourceLanguageDialog(current: String?, onPick: (String) -> Unit, onDismiss: () -> Unit) =
+    LanguagePickerDialog(
+        current, onPick,
+        title = "Source language",
+        description = "The language your documents are written in.",
+        onDismiss = onDismiss
+    )
 
 @Composable
 private fun LanguageGrid(selected: String, modifier: Modifier, onSelect: (String) -> Unit) {

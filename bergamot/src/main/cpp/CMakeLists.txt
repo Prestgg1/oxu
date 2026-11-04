@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# Native offline translation engine: Mozilla's bergamot-translator (Marian NMT)
-# plus CLD2 for source language detection. Build recipe adapted from
+# Native offline translation engine: Mozilla's bergamot-translator (Marian NMT).
+# Build recipe adapted from
 # https://github.com/DavidVentura/offline-translator (GPL-3.0).
 cmake_minimum_required(VERSION 3.22.1)
 project("oxu-bergamot")
@@ -39,10 +39,9 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OXU_FLAGS} -fvisibility-inlines-hidden
 set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--build-id=none -Wl,--hash-style=gnu -Wl,--gc-sections -Wl,--strip-all -Wl,--exclude-libs,ALL -Wl,--sort-section=name -Wl,--sort-common -Wl,-z,relro -Wl,-z,now -Wl,-z,max-page-size=16384")
 
 add_subdirectory(bergamot-translator)
-include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/cld2.cmake)
 
 add_library(oxu-bergamot SHARED oxu_bergamot.cpp)
-target_link_libraries(oxu-bergamot PRIVATE bergamot-translator cld2 log)
+target_link_libraries(oxu-bergamot PRIVATE bergamot-translator log)
 # CMake 3.22 adds -fuse-ld=gold when IPO is on for the linking target; gold can't
 # link Android objects. lld runs ThinLTO on the bitcode archives by itself.
 set_property(TARGET oxu-bergamot PROPERTY INTERPROCEDURAL_OPTIMIZATION FALSE)

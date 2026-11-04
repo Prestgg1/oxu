@@ -14,8 +14,6 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.net.URLEncoder
 
-private const val AUTO = "Autodetect"
-private const val AUTO_LIBRE = "auto"
 private const val USER_AGENT = "Oxu/1.0 (Android)"
 
 open class TranslationException(message: String) : Exception(message)
@@ -26,7 +24,8 @@ class NetworkException(message: String) : TranslationException(message)
 interface Translator {
     val label: String
 
-    suspend fun translate(text: String, to: String, onPartial: (String) -> Unit = {}): String
+    /** Translates [text] from language [from] into [to] (Oxu codes). The source is never guessed. */
+    suspend fun translate(text: String, from: String, to: String, onPartial: (String) -> Unit = {}): String
 }
 
 /**
@@ -67,12 +66,12 @@ class FallbackTranslator(
 
     override val label get() = online.label
 
-    override suspend fun translate(text: String, to: String, onPartial: (String) -> Unit): String =
+    override suspend fun translate(text: String, from: String, to: String, onPartial: (String) -> Unit): String =
         try {
-            online.translate(text, to, onPartial)
+            online.translate(text, from, to, onPartial)
         } catch (e: NetworkException) {
-            if (!models.isInstalled(to)) throw e
-            offline.translate(text, to, onPartial)
+            if (!models.isInstalled(from) || !models.isInstalled(to)) throw e
+            offline.translate(text, from, to, onPartial)
         }
 }
 
@@ -86,22 +85,24 @@ class MyMemoryTranslator : Translator {
 
     private val cache = lru<String, String>(200)
 
-    override suspend fun translate(text: String, to: String, onPartial: (String) -> Unit): String {
+    override suspend fun translate(text: String, from: String, to: String, onPartial: (String) -> Unit): String {
         val t = text.trim()
         if (t.isEmpty()) return ""
+        if (from == to) return t
+        val src = Langs.forMyMemory(from)
         val dst = Langs.forMyMemory(to)
 
-        val key = "$dst|$t"
+        val key = "$src|$dst|$t"
         synchronized(cache) { cache[key] }?.let { return it }
 
-        val result = translateChunked(t, 440, onPartial) { translateChunk(it, dst) }
+        val result = translateChunked(t, 440, onPartial) { translateChunk(it, src, dst) }
         synchronized(cache) { cache[key] = result }
         return result
     }
 
-    private suspend fun translateChunk(chunk: String, to: String): String {
+    private suspend fun translateChunk(chunk: String, from: String, to: String): String {
         val url = "https://api.mymemory.translated.net/get?q=" +
-            URLEncoder.encode(chunk, "UTF-8") + "&langpair=$AUTO|$to"
+            URLEncoder.encode(chunk, "UTF-8") + "&langpair=$from|$to"
 
         val body = get(url)
         val json = runCatching { JSONObject(body) }.getOrNull()
@@ -143,21 +144,23 @@ class LibreTranslator(rawUrl: String, private val key: String) : Translator {
         return u
     }
 
-    override suspend fun translate(text: String, to: String, onPartial: (String) -> Unit): String {
+    override suspend fun translate(text: String, from: String, to: String, onPartial: (String) -> Unit): String {
         val t = text.trim()
         if (t.isEmpty()) return ""
+        if (from == to) return t
         if (endpoint.isEmpty()) {
             throw TranslationException("No LibreTranslate URL set. Enter your own server address in Settings.")
         }
+        val src = Langs.forLibre(from)
         val dst = Langs.forLibre(to)
 
-        val cacheKey = "$endpoint|$dst|$t"
+        val cacheKey = "$endpoint|$src|$dst|$t"
         synchronized(cache) { cache[cacheKey] }?.let { return it }
 
         val result = translateChunked(t, 1800, onPartial) { c ->
             val payload = JSONObject()
                 .put("q", c)
-                .put("source", AUTO_LIBRE)
+                .put("source", src)
                 .put("target", dst)
                 .put("format", "text")
             if (key.isNotEmpty()) payload.put("api_key", key)
