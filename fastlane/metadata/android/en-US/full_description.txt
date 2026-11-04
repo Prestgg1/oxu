@@ -1,28 +1,30 @@
-<b>Oxu</b> turns a PDF into text you can read and translate.
+<b>Oxu</b> turns books, documents and web pages into calm, plain text you can read and translate.
 
 <p><b>How it works</b></p>
 <ol>
-<li>Open a PDF, the text of the page appears on screen</li>
+<li>Open a file or a web page, its text appears on screen</li>
 <li>Long-press to select the sentence you want</li>
 <li>Tap &quot;Translate&quot; and read it in your own language</li>
 </ol>
 
 <p><b>What you get</b></p>
 <ul>
-<li>Page-by-page text extraction, no account, no ads, no tracking</li>
-<li>21 target languages, including English, Turkish, Azerbaijani, Russian, German, Spanish, Arabic, Chinese and Japanese</li>
-<li>Adjustable text size and a dark theme</li>
-<li>Recent files that remember the page you stopped at</li>
-<li>Opens PDFs from any file manager, or by sharing them into Oxu</li>
-<li>Two translation backends: MyMemory (an online service, free, no API key, daily limit) or LibreTranslate (your own server, no limits)</li>
+<li>PDF, EPUB, DOCX, ODT, FB2, HTML and plain text files</li>
+<li>Web reader: open a link, or share it from your browser, and read only the article text, without menus, ads or pictures. Pages you read stay available offline</li>
+<li>Text shared from any app opens straight in the reader</li>
+<li>Offline translation on your phone with Mozilla's Firefox Translations models: download the languages you need, nothing leaves the device</li>
+<li>21 languages, including English, Turkish, Azerbaijani, Russian, German, Spanish, Arabic, Chinese and Japanese. You pick both the language of the text and the language to translate into</li>
+<li>Adjustable text size and a dark theme, no account, no ads, no tracking</li>
+<li>Recent files and pages that remember where you stopped</li>
+<li>Three translation backends: offline (on device), MyMemory (an online service, free, no API key, daily limit) or LibreTranslate (your own server, no limits). Online services can fall back to downloaded languages when there is no connection</li>
 </ul>
 
 <p><b>Privacy</b></p>
-<p>Oxu has no analytics. Reading a PDF works entirely offline. The only network
-request is the translation of the text you selected, sent to the service you chose
-in Settings. Translation needs an online service unless you run your own
-LibreTranslate server, in which case the text never leaves your own
-infrastructure.</p>
+<p>Oxu has no analytics. Reading works entirely offline. Network requests are
+only made for what you ask for: the translation of the text you selected (sent to
+the online service you chose in Settings, or nowhere with offline translation),
+downloading the offline language list and models from Mozilla, and loading a web
+page you opened.</p>
 
 <p><b>Requirements</b></p>
 <p>Android 8.0 (API 26) or newer. Scanned or image-only PDFs contain no text to

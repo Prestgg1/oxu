@@ -48,7 +48,7 @@ translates correctly. It can be changed in Settings or straight from the transla
 
 ## Download
 
-- **F-Droid** — _pending inclusion_
+- **F-Droid** — <https://f-droid.org/packages/io.github.Prestgg.oxu/>
 - **GitHub Releases** — <https://github.com/Prestgg1/oxu/releases>
 
 The release APKs are signed. Verify the signature with:
@@ -103,8 +103,11 @@ to run exactly like F-Droid's does:
 
 ```bash
 git clone https://github.com/Prestgg1/oxu.git && cd oxu
-git checkout v1.0.0                    # a clean tree at the tagged commit
+git checkout v1.1.0                    # a clean tree at the tagged commit
+git submodule update --init --recursive
+git config --global core.abbrev 10     # marian embeds a short git hash; F-Droid sets the same
 export JAVA_HOME=/path/to/jdk-21       # F-Droid builds with JDK 21
+# NDK 28.2.13676358 and CMake 3.22.1 from the Android SDK
 
 cd app                                  # the Gradle module, i.e. F-Droid's `subdir`
 ../gradlew assembleRelease
@@ -124,6 +127,7 @@ The four things that have to match, because each of them changes the bytes:
 | **JDK 21** | a different JDK produces a slightly different `classes.dex` |
 | **Clean tree at the tagged commit** | AGP embeds the git state in `META-INF/version-control-info.textproto` |
 | **`app/` as the build root** | matches `subdir` in the build metadata |
+| **NDK 28.2 and `core.abbrev 10`** | the native translation engine is compiled into the APK |
 | **The `zipalign.py` call above** | v1 signing must stay off, otherwise `META-INF/*.SF` files are added |
 
 If you only care about running the app, `./gradlew :app:assembleDebug` is enough.

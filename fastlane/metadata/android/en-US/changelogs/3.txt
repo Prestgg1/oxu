@@ -1,0 +1,7 @@
+<ul>
+<li>Offline translation on your phone (Mozilla models), with a language manager in Settings</li>
+<li>Opens EPUB, DOCX, ODT, FB2, HTML and text files, not only PDF</li>
+<li>Web reader: open a link, or share it from your browser, and read only the article text</li>
+<li>Text shared from any app opens straight in the reader</li>
+<li>The source language is now picked by hand, so single words and names translate correctly</li>
+</ul>
