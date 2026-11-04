@@ -1,0 +1,4 @@
+<ul>
+<li>Much smaller download: each phone now gets an APK with only the translation engine it can run (about 11 MB instead of 30 MB)</li>
+<li>Removed unused encryption tables from the PDF library</li>
+</ul>

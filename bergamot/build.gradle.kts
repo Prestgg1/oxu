@@ -3,9 +3,8 @@ plugins {
     id("com.android.library")
 }
 
-// ABIs to build the native engine for. Override for faster local builds:
-//   ./gradlew assembleDebug -Poxu.abis=arm64-v8a
-val oxuAbis = (findProperty("oxu.abis") as String? ?: "arm64-v8a,armeabi-v7a,x86_64")
+// ABIs to build the native engine for; set in gradle.properties, override with -Poxu.abis=...
+val oxuAbis = (findProperty("oxu.abis") as String)
     .split(',').map { it.trim() }.filter { it.isNotEmpty() }
 
 android {

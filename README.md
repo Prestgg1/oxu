@@ -51,10 +51,16 @@ translates correctly. It can be changed in Settings or straight from the transla
 - **F-Droid** — <https://f-droid.org/packages/io.github.Prestgg.oxu/>
 - **GitHub Releases** — <https://github.com/Prestgg1/oxu/releases>
 
+Since 1.1.1 there is one APK per processor type, so you only download the
+translation engine your phone can run. On GitHub the file name ends in the
+version code, whose last digit is the type: `…1.apk` for 32-bit ARM
+(`armeabi-v7a`), `…2.apk` for 64-bit ARM (`arm64-v8a`, almost every current
+phone) and `…3.apk` for `x86_64`. F-Droid picks the right one for you.
+
 The release APKs are signed. Verify the signature with:
 
 ```bash
-apksigner verify --print-certs oxu-1.0.0.apk
+apksigner verify --print-certs oxu-1.1.1-42.apk
 ```
 
 ## Build from source
@@ -68,9 +74,10 @@ git submodule update --init --recursive
 ./gradlew :app:assembleDebug
 ```
 
-The native engine is built for `arm64-v8a`, `armeabi-v7a` and `x86_64`. For a
-faster local build, limit it to the ABI of your device:
-`./gradlew :app:assembleDebug -Poxu.abis=arm64-v8a`.
+The native engine is built for `arm64-v8a`, `armeabi-v7a` and `x86_64` (set in
+`gradle.properties`). For a faster local build, limit it to the ABI of your
+device: `./gradlew :app:assembleDebug -Poxu.abis=arm64-v8a`. A build for a
+single ABI gets its own version code, `versionCode * 10 + 1/2/3`.
 
 The APK will be at `app/build/outputs/apk/debug/app-debug.apk`.
 
@@ -103,14 +110,14 @@ to run exactly like F-Droid's does:
 
 ```bash
 git clone https://github.com/Prestgg1/oxu.git && cd oxu
-git checkout v1.1.0                    # a clean tree at the tagged commit
+git checkout v1.1.1                    # a clean tree at the tagged commit
 git submodule update --init --recursive
 git config --global core.abbrev 10     # marian embeds a short git hash; F-Droid sets the same
 export JAVA_HOME=/path/to/jdk-21       # F-Droid builds with JDK 21
 # NDK 28.2.13676358 and CMake 3.22.1 from the Android SDK
 
 cd app                                  # the Gradle module, i.e. F-Droid's `subdir`
-../gradlew assembleRelease
+../gradlew assembleRelease -Poxu.abis=arm64-v8a   # one APK per ABI, like F-Droid
 
 # same alignment F-Droid applies in its postbuild step
 git clone https://gitlab.com/fdroid/reproducible-apk-tools.git
@@ -120,7 +127,7 @@ python3 ../reproducible-apk-tools/zipalign.py --page-size 16 --pad-like-apksigne
 apksigner sign --ks <your.keystore> --v1-signing-enabled false aligned.apk
 ```
 
-The four things that have to match, because each of them changes the bytes:
+The things that have to match, because each of them changes the bytes:
 
 | | |
 | --- | --- |
@@ -128,6 +135,7 @@ The four things that have to match, because each of them changes the bytes:
 | **Clean tree at the tagged commit** | AGP embeds the git state in `META-INF/version-control-info.textproto` |
 | **`app/` as the build root** | matches `subdir` in the build metadata |
 | **NDK 28.2 and `core.abbrev 10`** | the native translation engine is compiled into the APK |
+| **`-Poxu.abis=<one ABI>`** | F-Droid builds each ABI separately, with that ABI's version code |
 | **The `zipalign.py` call above** | v1 signing must stay off, otherwise `META-INF/*.SF` files are added |
 
 If you only care about running the app, `./gradlew :app:assembleDebug` is enough.
