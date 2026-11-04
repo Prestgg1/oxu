@@ -6,13 +6,14 @@ import android.util.LruCache
 import com.tom_roush.pdfbox.android.PDFBoxResourceLoader
 import com.tom_roush.pdfbox.pdmodel.PDDocument
 import com.tom_roush.pdfbox.text.PDFTextStripper
+import io.github.Prestgg.oxu.doc.DocSource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 
-class PdfSource private constructor(file: File) {
+class PdfSource private constructor(file: File) : DocSource {
 
     // PDFBox is not thread safe: every access to [doc] holds [lock].
     private val lock = ReentrantLock()
@@ -23,7 +24,7 @@ class PdfSource private constructor(file: File) {
 
     private val cache = LruCache<Int, String>(24)
 
-    val pageCount: Int = doc!!.numberOfPages
+    override val pageCount: Int = doc!!.numberOfPages
 
     companion object {
         suspend fun open(context: Context, file: File): PdfSource = withContext(Dispatchers.IO) {
@@ -32,7 +33,7 @@ class PdfSource private constructor(file: File) {
         }
     }
 
-    suspend fun text(page: Int): String {
+    override suspend fun text(page: Int): String {
         cache.get(page)?.let { return it }
         return withContext(Dispatchers.IO) {
             lock.withLock {
@@ -49,7 +50,7 @@ class PdfSource private constructor(file: File) {
     }
 
     /** Extracts a page in the background so that turning to it is instant. */
-    suspend fun prefetch(page: Int) {
+    override suspend fun prefetch(page: Int) {
         if (page in 0 until pageCount && cache.get(page) == null) text(page)
     }
 
@@ -67,7 +68,7 @@ class PdfSource private constructor(file: File) {
     }
 
     /** Safe to call from the main thread: never waits for a running extraction. */
-    fun close() {
+    override fun close() {
         closed = true
         cache.evictAll()
         if (lock.tryLock()) {

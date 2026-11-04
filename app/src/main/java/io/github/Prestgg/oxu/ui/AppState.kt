@@ -8,6 +8,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import io.github.Prestgg.oxu.data.Prefs
+import io.github.Prestgg.oxu.doc.DocSource
+import io.github.Prestgg.oxu.doc.Format
+import io.github.Prestgg.oxu.doc.Formats
+import io.github.Prestgg.oxu.doc.TextDocSource
+import io.github.Prestgg.oxu.doc.WebPage
+import io.github.Prestgg.oxu.doc.WebReader
 import io.github.Prestgg.oxu.net.Translators
 import io.github.Prestgg.oxu.offline.OfflineModels
 import io.github.Prestgg.oxu.pdf.PdfSource
@@ -17,6 +23,8 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.json.JSONArray
+import org.json.JSONObject
 import java.io.File
 import java.security.MessageDigest
 
@@ -36,7 +44,7 @@ class AppState(context: Context) {
     var screen by mutableStateOf(if (prefs.targetLang.isEmpty()) Screen.FIRST_RUN else Screen.HOME)
         private set
 
-    var source by mutableStateOf<PdfSource?>(null)
+    var source by mutableStateOf<DocSource?>(null)
         private set
 
     var docName by mutableStateOf("")
@@ -58,30 +66,94 @@ class AppState(context: Context) {
         screen = target
     }
 
+    /** Opens a document from a content/file URI, or a web page from an http(s) link. */
     fun open(uri: Uri) {
+        if (uri.scheme == "http" || uri.scheme == "https") return openUrl(uri.toString())
+        load("Could not open the file") {
+            val (name, size) = describe(uri)
+            val file = copyToCache(uri, size)
+            val mime = runCatching { app.contentResolver.getType(uri) }.getOrNull()
+            val format = withContext(Dispatchers.IO) { Formats.detect(file, name, mime) }
+                ?: throw IllegalStateException("$name: this file type is not supported")
+            val src: DocSource = if (format == Format.PDF) {
+                PdfSource.open(app, file)
+            } else {
+                val paras = withContext(Dispatchers.IO) { Formats.paragraphs(file, format) }
+                if (paras.isEmpty()) throw IllegalStateException("No text found in this ${format.label} file")
+                TextDocSource(paras)
+            }
+            Triple(src, name, uri.toString())
+        }
+    }
+
+    /** Web reader: downloads the page and keeps only its readable text. */
+    fun openUrl(input: String) {
+        val url = WebReader.normalizeUrl(input)
+        load("Could not open the page") {
+            val page = withContext(Dispatchers.IO) {
+                try {
+                    WebReader.load(url).also { saveWebPage(url, it) }
+                } catch (e: Exception) {
+                    // No connection: show the copy saved the last time, if there is one.
+                    loadWebPage(url) ?: throw e
+                }
+            }
+            Triple(TextDocSource(page.paragraphs), page.title, url)
+        }
+    }
+
+    /** Text shared from another app. Not added to the recent list: there is nothing to reopen. */
+    fun openText(text: String) {
+        val paras = Formats.plainText(text.toByteArray())
+        if (paras.isEmpty()) return
+        source?.close()
+        source = TextDocSource(paras)
+        docName = "Shared text"
+        docUri = ""
+        initialPage = 0
+        error = null
+        screen = Screen.READER
+    }
+
+    private fun load(failure: String, open: suspend () -> Triple<DocSource, String, String>) {
         if (loading) return
         loading = true
         error = null
         scope.launch {
             try {
-                val (name, size) = describe(uri)
-                val file = copyToCache(uri, size)
-                val src = PdfSource.open(app, file)
+                val (src, name, key) = open()
                 source?.close()
                 source = src
                 docName = name
-                docUri = uri.toString()
-                val key = uri.toString()
-                initialPage = prefs.recents.firstOrNull { it.uri == key }?.page ?: 0
+                docUri = key
+                initialPage = (prefs.recents.firstOrNull { it.uri == key }?.page ?: 0)
+                    .coerceIn(0, (src.pageCount - 1).coerceAtLeast(0))
                 prefs.touchRecent(key, name, initialPage)
                 screen = Screen.READER
             } catch (e: Throwable) {
-                error = "Could not open PDF: ${e.message ?: e.javaClass.simpleName}"
+                error = "$failure: ${e.message ?: e.javaClass.simpleName}"
             } finally {
                 loading = false
             }
         }
     }
+
+    private fun webFile(url: String) = File(File(app.filesDir, "web").apply { mkdirs() }, cacheName(url, ".json"))
+
+    private fun saveWebPage(url: String, page: WebPage) {
+        val json = JSONObject().put("title", page.title).put("paragraphs", JSONArray(page.paragraphs))
+        val file = webFile(url)
+        runCatching { file.writeText(json.toString()) }
+        // Saved pages are kept for the recent list only.
+        val wanted = prefs.recents.map { cacheName(it.uri, ".json") }.toSet() + file.name
+        file.parentFile?.listFiles()?.forEach { if (it.name !in wanted) it.delete() }
+    }
+
+    private fun loadWebPage(url: String): WebPage? = runCatching {
+        val o = JSONObject(webFile(url).readText())
+        val arr = o.getJSONArray("paragraphs")
+        WebPage(url, o.getString("title"), (0 until arr.length()).map { arr.getString(it) })
+    }.getOrNull()
 
     fun savePage(page: Int) {
         if (docUri.isNotEmpty()) prefs.setPage(docUri, page)
@@ -114,12 +186,12 @@ class AppState(context: Context) {
                     }
                 }
         }
-        (name ?: uri.lastPathSegment?.substringAfterLast('/') ?: "document.pdf") to size
+        (name ?: uri.lastPathSegment?.substringAfterLast('/') ?: "document") to size
     }
 
-    private fun cacheName(uri: String): String {
+    private fun cacheName(uri: String, suffix: String = ".doc"): String {
         val hash = MessageDigest.getInstance("SHA-256").digest(uri.toByteArray())
-        return hash.take(16).joinToString("") { "%02x".format(it) } + ".pdf"
+        return hash.take(16).joinToString("") { "%02x".format(it) } + suffix
     }
 
     private suspend fun copyToCache(uri: Uri, size: Long): File = withContext(Dispatchers.IO) {

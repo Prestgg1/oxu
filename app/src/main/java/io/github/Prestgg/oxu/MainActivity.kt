@@ -27,6 +27,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import io.github.Prestgg.oxu.doc.WebReader
 import io.github.Prestgg.oxu.ui.AppState
 import io.github.Prestgg.oxu.ui.HomeScreen
 import io.github.Prestgg.oxu.ui.LanguagePicker
@@ -38,16 +39,22 @@ import io.github.Prestgg.oxu.ui.SettingsScreen
 
 class MainActivity : ComponentActivity() {
 
-    private val incomingPdf = mutableStateOf<Uri?>(null)
+    /** A document or web link handed over by another app (open with / share). */
+    private val incoming = mutableStateOf<Uri?>(null)
+
+    /** Plain text shared from another app (no file, no link): read it as it is. */
+    private val incomingText = mutableStateOf<String?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
-        incomingPdf.value = intent.pdfUri()
+        receive(intent)
         setContent {
             val app = remember { AppState(applicationContext) }
-            val incoming = incomingPdf.value
-            LaunchedEffect(incoming) { incoming?.let { app.open(it) } }
+            val uri = incoming.value
+            val text = incomingText.value
+            LaunchedEffect(uri) { uri?.let { app.open(it) } }
+            LaunchedEffect(text) { text?.let { app.openText(it) } }
             DisposableEffect(app) { onDispose { app.dispose() } }
             OxuTheme {
                 Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
@@ -55,7 +62,7 @@ class MainActivity : ComponentActivity() {
                         when (app.screen) {
                             Screen.FIRST_RUN -> LanguagePicker(
                                 title = "Choose your target language",
-                                subtitle = "Which language should PDF text be translated into?",
+                                subtitle = "Which language should the text be translated into?",
                                 confirmLabel = "Continue",
                                 initial = null
                             ) { code ->
@@ -83,7 +90,7 @@ class MainActivity : ComponentActivity() {
                                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
                                         CircularProgressIndicator(Modifier.padding(end = 12.dp))
-                                        Text("Opening PDF...")
+                                        Text("Opening...")
                                     }
                                 }
                             }
@@ -122,12 +129,23 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
-        incomingPdf.value = intent.pdfUri()
+        receive(intent)
+    }
+
+    private fun receive(intent: Intent) {
+        val uri = intent.incomingUri()
+        incoming.value = uri
+        incomingText.value = if (uri == null && intent.action == Intent.ACTION_SEND) {
+            intent.getStringExtra(Intent.EXTRA_TEXT)?.takeIf { it.isNotBlank() }
+        } else null
     }
 }
 
-private fun Intent.pdfUri(): Uri? = when (action) {
+private fun Intent.incomingUri(): Uri? = when (action) {
     Intent.ACTION_VIEW -> data
-    Intent.ACTION_SEND -> IntentCompat.getParcelableExtra(this, Intent.EXTRA_STREAM, Uri::class.java)
+    Intent.ACTION_SEND ->
+        IntentCompat.getParcelableExtra(this, Intent.EXTRA_STREAM, Uri::class.java)
+            // A link shared from a browser arrives as text.
+            ?: WebReader.findUrl(getStringExtra(Intent.EXTRA_TEXT))?.let(Uri::parse)
     else -> null
 }

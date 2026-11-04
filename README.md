@@ -9,16 +9,21 @@ Oxu extracts the text of a PDF page by page, lets you select a sentence, and
 translates it into your language. Nothing is stored on a server, the app has no
 accounts, no tracking and no ads.
 
-The source language is detected automatically by the translation service, so you
-only ever pick the language you want to *read* in.
+You pick the language your documents are written in and the language you want to
+*read* in. The source language is never guessed, so even a single word or a name
+translates correctly. It can be changed in Settings or straight from the translation sheet.
 
 ## Features
 
 - Page-by-page text extraction from any PDF (text based, not scanned)
+- EPUB, DOCX, ODT, FB2, HTML and plain text (TXT, Markdown) books and documents
+- Web reader: open a link (or share it from your browser) and read only the article
+  text, without menus, ads or pictures; read pages stay available offline
+- Text shared from any app opens straight in the reader
 - Long-press to select text, then one tap to translate
 - 21 target languages, adjustable text size, dark theme
 - Recent files with the last page you were on
-- Opens PDFs from the file manager or by sharing them into Oxu
+- Opens documents from the file manager or by sharing them into Oxu
 - Three translation backends:
   - **MyMemory** — free, no API key, has a daily limit
   - **LibreTranslate** — your own server, better quality, no limits
@@ -134,13 +139,13 @@ server you control, in which case the text never leaves your own infrastructure.
 
 ## How it works
 
-- Text extraction: [PDFBox for Android](https://github.com/TomRoush/PdfBox-Android)
+- Text extraction: [PDFBox for Android](https://github.com/TomRoush/PdfBox-Android),
+  [jsoup](https://jsoup.org) (MIT) for EPUB/HTML and web pages
 - UI: Jetpack Compose, Material 3
 - Translation: MyMemory or LibreTranslate, plain HTTP client
 - Offline translation: [bergamot-translator](https://github.com/browsermt/bergamot-translator)
   (Marian NMT, MPL-2.0) with [Firefox Translations models](https://github.com/mozilla/translations)
-  by Mozilla, and [CLD2](https://github.com/CLD2Owners/cld2) (Apache-2.0) to detect
-  the source language. The Android build recipe is adapted from
+  by Mozilla. The Android build recipe is adapted from
   [Offline Translator](https://github.com/DavidVentura/offline-translator) (GPL-3.0).
 
 ## Contributing

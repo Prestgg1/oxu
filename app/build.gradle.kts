@@ -73,6 +73,8 @@ dependencies {
     implementation("androidx.compose.material:material-icons-core")
     debugImplementation("androidx.compose.ui:ui-tooling")
     implementation("com.tom-roush:pdfbox-android:2.0.27.0")
+    // HTML parsing for EPUB chapters, HTML files and the web reader (MIT).
+    implementation("org.jsoup:jsoup:1.18.1")
     implementation(project(":bergamot"))
     testImplementation("junit:junit:4.13.2")
     // The Android stub of org.json throws in local unit tests.
