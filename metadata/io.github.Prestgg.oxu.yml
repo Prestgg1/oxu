@@ -35,7 +35,10 @@ Builds:
     commit: 87b976de35ed4939e4843a8aacf3ec440dc6ccb9
     subdir: app
     submodules: true
-    sudo: git config --system core.abbrev 10
+    sudo:
+      - apt-get update
+      - apt-get install -y make
+      - git config --system core.abbrev 10
     gradle:
       - yes
     binary: https://github.com/Prestgg1/oxu/releases/download/v%v/oxu-%v-armeabi-v7a.apk
@@ -57,7 +60,10 @@ Builds:
     commit: 87b976de35ed4939e4843a8aacf3ec440dc6ccb9
     subdir: app
     submodules: true
-    sudo: git config --system core.abbrev 10
+    sudo:
+      - apt-get update
+      - apt-get install -y make
+      - git config --system core.abbrev 10
     gradle:
       - yes
     binary: https://github.com/Prestgg1/oxu/releases/download/v%v/oxu-%v-arm64-v8a.apk
@@ -79,7 +85,10 @@ Builds:
     commit: 87b976de35ed4939e4843a8aacf3ec440dc6ccb9
     subdir: app
     submodules: true
-    sudo: git config --system core.abbrev 10
+    sudo:
+      - apt-get update
+      - apt-get install -y make
+      - git config --system core.abbrev 10
     gradle:
       - yes
     binary: https://github.com/Prestgg1/oxu/releases/download/v%v/oxu-%v-x86_64.apk

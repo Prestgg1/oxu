@@ -9,7 +9,8 @@ Marian NMT), so the auto-update copy of the 1.0.1 recipe can't build it. This MR
 * `scandelete` for the two `wasm/module/**/package.json` files of bergamot-translator:
   they belong to its WebAssembly build, which Oxu never runs (same as Offline Translator).
 * `ndk: 28.2.13676358`, the version set in `bergamot/build.gradle.kts`.
-* `sudo: git config --system core.abbrev 10`: marian writes `git log -1 --pretty=%h`
+* `sudo`: `make` for the ExternalProject build of pcre2 (ssplit-cpp), and
+  `git config --system core.abbrev 10`: marian writes `git log -1 --pretty=%h`
   into the library, so the abbreviation length has to be fixed for a reproducible build.
 * `gradleprops: oxu.abis=<abi>` with `VercodeOperation` `10 * %c + 1/2/3`
   (armeabi-v7a, arm64-v8a, x86_64). The app sets that versionCode itself when built for a
