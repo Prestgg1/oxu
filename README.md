@@ -52,15 +52,14 @@ translates correctly. It can be changed in Settings or straight from the transla
 - **GitHub Releases** — <https://github.com/Prestgg1/oxu/releases>
 
 Since 1.1.1 there is one APK per processor type, so you only download the
-translation engine your phone can run. On GitHub the file name ends in the
-version code, whose last digit is the type: `…1.apk` for 32-bit ARM
-(`armeabi-v7a`), `…2.apk` for 64-bit ARM (`arm64-v8a`, almost every current
-phone) and `…3.apk` for `x86_64`. F-Droid picks the right one for you.
+translation engine your phone can run. On GitHub, pick `oxu-<version>-arm64-v8a.apk`
+for almost every current phone, `armeabi-v7a` for old 32-bit phones and `x86_64`
+for emulators and Chromebooks. F-Droid picks the right one for you.
 
 The release APKs are signed. Verify the signature with:
 
 ```bash
-apksigner verify --print-certs oxu-1.1.1-42.apk
+apksigner verify --print-certs oxu-1.1.1-arm64-v8a.apk
 ```
 
 ## Build from source
