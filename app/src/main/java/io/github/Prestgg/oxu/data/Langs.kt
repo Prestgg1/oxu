@@ -32,9 +32,18 @@ object Langs {
 
     fun name(code: String?): String = byCode(code)?.name ?: code ?: "—"
 
-    fun codeOf(code: String?): String = if (code == null) "en" else code
-
     fun forLibre(code: String): String = if (code.startsWith("zh")) "zh" else code
 
     fun forMyMemory(code: String): String = code
+
+    /** Oxu code → Mozilla Firefox Translations code. */
+    fun forBergamot(code: String): String = if (code == "zh-CN") "zh-Hans" else code
+
+    /** CLD2 language code → Oxu code (or the raw code when Oxu doesn't list the language). */
+    fun fromDetected(code: String): String? = when (code) {
+        "", "un", "xxx" -> null
+        "iw" -> "he"
+        "zh" -> "zh-CN"
+        else -> code
+    }
 }

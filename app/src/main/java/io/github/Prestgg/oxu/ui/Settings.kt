@@ -24,6 +24,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -39,6 +40,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import io.github.Prestgg.oxu.data.Langs
 import io.github.Prestgg.oxu.data.Prefs
+import io.github.Prestgg.oxu.offline.OfflineTranslator
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -94,6 +96,14 @@ fun SettingsScreen(app: AppState, onBack: () -> Unit) {
                 selected = prefs.backend == Prefs.BACKEND_LIBRE
             ) { prefs.backend = Prefs.BACKEND_LIBRE }
 
+            if (OfflineTranslator.engineAvailable) {
+                BackendOption(
+                    title = "Offline (on device)",
+                    subtitle = "Private and works without internet. Download the languages you need below.",
+                    selected = prefs.backend == Prefs.BACKEND_OFFLINE
+                ) { prefs.backend = Prefs.BACKEND_OFFLINE }
+            }
+
             if (prefs.backend == Prefs.BACKEND_LIBRE) {
                 Spacer(Modifier.height(12.dp))
                 OutlinedTextField(
@@ -114,6 +124,49 @@ fun SettingsScreen(app: AppState, onBack: () -> Unit) {
                     visualTransformation = PasswordVisualTransformation(),
                     modifier = Modifier.fillMaxWidth()
                 )
+            }
+
+            if (OfflineTranslator.engineAvailable) {
+                Spacer(Modifier.height(20.dp))
+                Text("Offline translation", style = MaterialTheme.typography.titleMedium)
+                Spacer(Modifier.height(8.dp))
+                val installed = app.offline.installedCodes().filter { it != "en" }
+                Card(onClick = { app.go(Screen.OFFLINE) }, modifier = Modifier.fillMaxWidth()) {
+                    Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f)) {
+                            Text("Offline languages", style = MaterialTheme.typography.titleSmall)
+                            Text(
+                                if (installed.isEmpty()) "None downloaded yet"
+                                else installed.joinToString(", ") { Langs.name(it) },
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null)
+                    }
+                }
+                if (prefs.backend != Prefs.BACKEND_OFFLINE) {
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .selectable(selected = prefs.offlineFallback, onClick = {
+                                prefs.offlineFallback = !prefs.offlineFallback
+                            })
+                            .padding(vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(Modifier.weight(1f)) {
+                            Text("Use offline languages without internet", style = MaterialTheme.typography.titleSmall)
+                            Text(
+                                "If the online service can't be reached, translate with downloaded languages.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Spacer(Modifier.width(8.dp))
+                        Switch(checked = prefs.offlineFallback, onCheckedChange = { prefs.offlineFallback = it })
+                    }
+                }
             }
 
             Spacer(Modifier.height(24.dp))

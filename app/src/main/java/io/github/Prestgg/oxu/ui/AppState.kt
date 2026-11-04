@@ -8,6 +8,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import io.github.Prestgg.oxu.data.Prefs
+import io.github.Prestgg.oxu.net.Translators
+import io.github.Prestgg.oxu.offline.OfflineModels
 import io.github.Prestgg.oxu.pdf.PdfSource
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -16,8 +18,9 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.security.MessageDigest
 
-enum class Screen { FIRST_RUN, HOME, SETTINGS, READER }
+enum class Screen { FIRST_RUN, HOME, SETTINGS, OFFLINE, READER }
 
 class AppState(context: Context) {
 
@@ -25,6 +28,10 @@ class AppState(context: Context) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
     val prefs = Prefs(app)
+
+    val offline = OfflineModels(app, scope)
+
+    val translators = Translators(prefs, offline)
 
     var screen by mutableStateOf(if (prefs.targetLang.isEmpty()) Screen.FIRST_RUN else Screen.HOME)
         private set
@@ -57,8 +64,8 @@ class AppState(context: Context) {
         error = null
         scope.launch {
             try {
-                val name = displayName(uri)
-                val file = copyToCache(uri, name)
+                val (name, size) = describe(uri)
+                val file = copyToCache(uri, size)
                 val src = PdfSource.open(app, file)
                 source?.close()
                 source = src
@@ -92,19 +99,38 @@ class AppState(context: Context) {
         scope.cancel()
     }
 
-    private suspend fun displayName(uri: Uri): String = withContext(Dispatchers.IO) {
+    /** Display name and size (bytes, or -1 if unknown) of a document. */
+    private suspend fun describe(uri: Uri): Pair<String, Long> = withContext(Dispatchers.IO) {
+        var name: String? = null
+        var size = -1L
         runCatching {
-            app.contentResolver.query(uri, null, null, null, null)?.use { c ->
-                val idx = c.getColumnIndex(OpenableColumns.DISPLAY_NAME)
-                if (idx >= 0 && c.moveToFirst()) c.getString(idx) else null
-            }
-        }.getOrNull() ?: uri.lastPathSegment?.substringAfterLast('/') ?: "document.pdf"
+            app.contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME, OpenableColumns.SIZE), null, null, null)
+                ?.use { c ->
+                    if (c.moveToFirst()) {
+                        val n = c.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                        val s = c.getColumnIndex(OpenableColumns.SIZE)
+                        if (n >= 0) name = c.getString(n)
+                        if (s >= 0 && !c.isNull(s)) size = c.getLong(s)
+                    }
+                }
+        }
+        (name ?: uri.lastPathSegment?.substringAfterLast('/') ?: "document.pdf") to size
     }
 
-    private suspend fun copyToCache(uri: Uri, name: String): File = withContext(Dispatchers.IO) {
+    private fun cacheName(uri: String): String {
+        val hash = MessageDigest.getInstance("SHA-256").digest(uri.toByteArray())
+        return hash.take(16).joinToString("") { "%02x".format(it) } + ".pdf"
+    }
+
+    private suspend fun copyToCache(uri: Uri, size: Long): File = withContext(Dispatchers.IO) {
         val dir = File(app.cacheDir, "docs").apply { mkdirs() }
-        val target = File(dir, "${name.hashCode().toUInt().toString(16)}-${uri.toString().hashCode().toUInt().toString(16)}.pdf")
-        if (target.exists() && target.length() > 1024) return@withContext target
+        val target = File(dir, cacheName(uri.toString()))
+        // Reuse the copy unless the original changed size (it was edited or replaced).
+        if (target.exists() && target.length() > 0 && (size < 0 || size == target.length())) {
+            target.setLastModified(System.currentTimeMillis())
+            return@withContext target
+        }
+        pruneCache(dir, keep = target.name)
         val tmp = File(target.parentFile, target.name + ".part")
         tmp.delete()
         app.contentResolver.openInputStream(uri)?.use { input ->
@@ -115,5 +141,11 @@ class AppState(context: Context) {
             tmp.delete()
         }
         target
+    }
+
+    /** Keeps copies of recent documents only, so the cache doesn't grow forever. */
+    private fun pruneCache(dir: File, keep: String) {
+        val wanted = prefs.recents.map { cacheName(it.uri) }.toSet() + keep
+        dir.listFiles()?.forEach { f -> if (f.name !in wanted) f.delete() }
     }
 }

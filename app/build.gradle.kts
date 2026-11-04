@@ -24,6 +24,7 @@ android {
         targetSdk = 36
         versionCode = 2
         versionName = "1.0.1"
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildFeatures {
@@ -72,4 +73,10 @@ dependencies {
     implementation("androidx.compose.material:material-icons-core")
     debugImplementation("androidx.compose.ui:ui-tooling")
     implementation("com.tom-roush:pdfbox-android:2.0.27.0")
+    implementation(project(":bergamot"))
+    testImplementation("junit:junit:4.13.2")
+    // The Android stub of org.json throws in local unit tests.
+    testImplementation("org.json:json:20250517")
+    androidTestImplementation("androidx.test:runner:1.7.0")
+    androidTestImplementation("androidx.test.ext:junit:1.3.0")
 }

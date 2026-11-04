@@ -56,8 +56,10 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.Prestgg.oxu.data.Langs
-import io.github.Prestgg.oxu.net.Translate
-import io.github.Prestgg.oxu.pdf.PdfSource
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 
@@ -87,9 +89,12 @@ fun ReaderScreen(app: AppState, onBack: () -> Unit) {
     val tFlow = remember { MutableStateFlow<TState>(TState.Idle) }
     val tState by tFlow.collectAsState()
 
-    val text by produceState(initialValue = "", page) {
+    // null while the page is being extracted.
+    val pageText by produceState<String?>(initialValue = null, page) {
         value = source.text(page)
+        source.prefetch(page + 1)
     }
+    val text = pageText.orEmpty()
 
     val fieldValue = remember(text) {
         mutableStateOf(TextFieldValue(text = text, selection = TextRange.Zero))
@@ -103,18 +108,27 @@ fun ReaderScreen(app: AppState, onBack: () -> Unit) {
 
     LaunchedEffect(page) { app.savePage(page) }
 
-    suspend fun translate(value: String) {
+    var translateJob by remember { mutableStateOf<Job?>(null) }
+
+    // A new request replaces the running one, so a slow old answer can't overwrite a newer one.
+    fun translate(value: String) {
         if (value.isBlank()) return
+        translateJob?.cancel()
         sourceText = value
         tFlow.value = TState.Loading
-        try {
-            val translator = Translate.fromPrefs(prefs)
-            val res = translator.translate(value, prefs.targetLang) { partial ->
-                tFlow.value = TState.Done(partial, partial = true)
+        translateJob = scope.launch {
+            try {
+                val translator = app.translators.current()
+                val res = translator.translate(value, prefs.targetLang) { partial ->
+                    if (isActive) tFlow.value = TState.Done(partial, partial = true)
+                }
+                ensureActive()
+                tFlow.value = TState.Done(res)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Throwable) {
+                tFlow.value = TState.Error(e.message ?: "Translation failed")
             }
-            tFlow.value = TState.Done(res)
-        } catch (e: Throwable) {
-            tFlow.value = TState.Error(e.message ?: "Translation failed")
         }
     }
 
@@ -156,7 +170,11 @@ fun ReaderScreen(app: AppState, onBack: () -> Unit) {
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
         ) {
-            if (text.isBlank()) {
+            if (pageText == null) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+            } else if (text.isBlank()) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text(
                         "No text on this page.\nThis PDF may be a scan or an image.",
@@ -203,7 +221,7 @@ fun ReaderScreen(app: AppState, onBack: () -> Unit) {
                     ) {
                         Text(wordCountLabel(selectedText), style = MaterialTheme.typography.labelLarge)
                         TextButton({
-                            scope.launch { translate(selectedText) }
+                            translate(selectedText)
                             showSheet = true
                         }) { Text("Translate") }
                         TextButton({ fieldValue.value = fieldValue.value.copy(selection = TextRange.Zero) }) {
@@ -216,7 +234,10 @@ fun ReaderScreen(app: AppState, onBack: () -> Unit) {
     }
 
     if (showSheet) {
-        ModalBottomSheet(onDismissRequest = { showSheet = false }) {
+        ModalBottomSheet(onDismissRequest = {
+            showSheet = false
+            translateJob?.cancel()
+        }) {
             Column(
                 Modifier
                     .padding(horizontal = 20.dp)
@@ -260,7 +281,7 @@ fun ReaderScreen(app: AppState, onBack: () -> Unit) {
 
                     is TState.Error -> Column {
                         Text(s.message, color = MaterialTheme.colorScheme.error)
-                        TextButton({ scope.launch { translate(sourceText) } }) { Text("Try again") }
+                        TextButton({ translate(sourceText) }) { Text("Try again") }
                     }
                 }
             }
@@ -269,6 +290,6 @@ fun ReaderScreen(app: AppState, onBack: () -> Unit) {
 }
 
 private fun wordCountLabel(value: String): String {
-    val words = value.count { it == ' ' } + 1
+    val words = value.trim().split(Regex("\\s+")).count { it.isNotEmpty() }
     return if (words == 1) "1 word" else "$words words"
 }

@@ -12,11 +12,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
       - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: 17
       - uses: gradle/actions/setup-gradle@v4
+      - name: Unit tests
+        run: ./gradlew :app:testDebugUnitTest --no-daemon
       - name: Assemble debug APK
         run: ./gradlew :app:assembleDebug --no-daemon
       - name: Upload APK

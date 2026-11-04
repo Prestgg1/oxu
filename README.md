@@ -19,9 +19,12 @@ only ever pick the language you want to *read* in.
 - 21 target languages, adjustable text size, dark theme
 - Recent files with the last page you were on
 - Opens PDFs from the file manager or by sharing them into Oxu
-- Two translation backends:
+- Three translation backends:
   - **MyMemory** — free, no API key, has a daily limit
   - **LibreTranslate** — your own server, better quality, no limits
+  - **Offline** — on-device translation; download only the languages you need
+    (about 20–35 MB each) and delete them any time
+- Online services can fall back to downloaded languages when there's no internet
 - Fully offline for reading; only the text you select is sent for translation
 
 ## Screenshots
@@ -51,11 +54,18 @@ apksigner verify --print-certs oxu-1.0.0.apk
 
 ## Build from source
 
-Requirements: JDK 17 and the Android SDK (compile SDK 37, build tools 36).
+Requirements: JDK 17+, the Android SDK (compile SDK 37, build tools 36), NDK
+28.2.13676358 and CMake 3.22.1 (for the offline translation engine). The engine
+lives in git submodules:
 
 ```bash
+git submodule update --init --recursive
 ./gradlew :app:assembleDebug
 ```
+
+The native engine is built for `arm64-v8a`, `armeabi-v7a` and `x86_64`. For a
+faster local build, limit it to the ABI of your device:
+`./gradlew :app:assembleDebug -Poxu.abis=arm64-v8a`.
 
 The APK will be at `app/build/outputs/apk/debug/app-debug.apk`.
 
@@ -116,7 +126,9 @@ If you only care about running the app, `./gradlew :app:assembleDebug` is enough
 ## Privacy
 
 Oxu has no analytics and no network calls other than the translation request
-you trigger. The selected text (and nothing else) is sent to the translation
+you trigger and, if you use offline translation, downloading the language list
+and the models you pick from Mozilla's servers. Offline translation runs entirely
+on the device. The selected text (and nothing else) is sent to the translation
 service you chose in Settings. With LibreTranslate you can point the app at a
 server you control, in which case the text never leaves your own infrastructure.
 
@@ -125,6 +137,11 @@ server you control, in which case the text never leaves your own infrastructure.
 - Text extraction: [PDFBox for Android](https://github.com/TomRoush/PdfBox-Android)
 - UI: Jetpack Compose, Material 3
 - Translation: MyMemory or LibreTranslate, plain HTTP client
+- Offline translation: [bergamot-translator](https://github.com/browsermt/bergamot-translator)
+  (Marian NMT, MPL-2.0) with [Firefox Translations models](https://github.com/mozilla/translations)
+  by Mozilla, and [CLD2](https://github.com/CLD2Owners/cld2) (Apache-2.0) to detect
+  the source language. The Android build recipe is adapted from
+  [Offline Translator](https://github.com/DavidVentura/offline-translator) (GPL-3.0).
 
 ## Contributing
 

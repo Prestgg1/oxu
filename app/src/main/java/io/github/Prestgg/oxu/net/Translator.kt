@@ -3,18 +3,25 @@ package io.github.Prestgg.oxu.net
 
 import io.github.Prestgg.oxu.data.Langs
 import io.github.Prestgg.oxu.data.Prefs
+import io.github.Prestgg.oxu.offline.OfflineModels
+import io.github.Prestgg.oxu.offline.OfflineTranslator
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import java.io.BufferedReader
+import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URL
 import java.net.URLEncoder
 
 private const val AUTO = "Autodetect"
 private const val AUTO_LIBRE = "auto"
+private const val USER_AGENT = "Oxu/1.0 (Android)"
 
-class TranslationException(message: String) : Exception(message)
+open class TranslationException(message: String) : Exception(message)
+
+/** The service could not be reached at all (no connection, DNS failure, timeout). */
+class NetworkException(message: String) : TranslationException(message)
 
 interface Translator {
     val label: String
@@ -22,12 +29,50 @@ interface Translator {
     suspend fun translate(text: String, to: String, onPartial: (String) -> Unit = {}): String
 }
 
-object Translate {
-    fun fromPrefs(prefs: Prefs): Translator =
-        if (prefs.backend == Prefs.BACKEND_LIBRE) {
-            LibreTranslator(prefs.libreUrl, prefs.libreKey)
-        } else {
-            MyMemoryTranslator()
+/**
+ * Hands out the translator matching the current settings. Instances are reused
+ * while the settings stay the same, so their in-memory caches actually work.
+ */
+class Translators(private val prefs: Prefs, private val offline: OfflineModels) {
+
+    private var key: String? = null
+    private var cached: Translator? = null
+
+    fun current(): Translator {
+        val k = listOf(prefs.backend, prefs.libreUrl, prefs.libreKey, prefs.offlineFallback.toString()).joinToString("|")
+        cached?.let { if (k == key) return it }
+        val online: Translator? = when (prefs.backend) {
+            Prefs.BACKEND_OFFLINE -> null
+            Prefs.BACKEND_LIBRE -> LibreTranslator(prefs.libreUrl, prefs.libreKey)
+            else -> MyMemoryTranslator()
+        }
+        val t = when {
+            online == null -> OfflineTranslator(offline)
+            prefs.offlineFallback && OfflineTranslator.engineAvailable ->
+                FallbackTranslator(online, OfflineTranslator(offline), offline)
+            else -> online
+        }
+        key = k
+        cached = t
+        return t
+    }
+}
+
+/** Uses the online service, and the downloaded offline models when there is no connection. */
+class FallbackTranslator(
+    private val online: Translator,
+    private val offline: Translator,
+    private val models: OfflineModels
+) : Translator {
+
+    override val label get() = online.label
+
+    override suspend fun translate(text: String, to: String, onPartial: (String) -> Unit): String =
+        try {
+            online.translate(text, to, onPartial)
+        } catch (e: NetworkException) {
+            if (!models.isInstalled(to)) throw e
+            offline.translate(text, to, onPartial)
         }
 }
 
@@ -47,17 +92,10 @@ class MyMemoryTranslator : Translator {
         val dst = Langs.forMyMemory(to)
 
         val key = "$dst|$t"
-        cache[key]?.let { return it }
+        synchronized(cache) { cache[key] }?.let { return it }
 
-        val out = StringBuilder()
-        chunk(t).forEach { c ->
-            val part = translateChunk(c, dst)
-            if (out.isNotEmpty()) out.append(' ')
-            out.append(part)
-            onPartial(out.toString())
-        }
-        val result = out.toString()
-        cache[key] = result
+        val result = translateChunked(t, 440, onPartial) { translateChunk(it, dst) }
+        synchronized(cache) { cache[key] = result }
         return result
     }
 
@@ -79,7 +117,7 @@ class MyMemoryTranslator : Translator {
         if (statusInt != 200) {
             val msg = when {
                 statusInt == 403 || details.contains("LIMIT", true) ->
-                    "MyMemory daily limit reached. Try again tomorrow, or use LibreTranslate."
+                    "MyMemory daily limit reached. Try again tomorrow, or use LibreTranslate or offline translation."
                 statusInt == 429 -> "Too many requests, please wait a moment."
                 else -> details.ifBlank { "Translation failed ($statusInt)" }
             }
@@ -114,65 +152,136 @@ class LibreTranslator(rawUrl: String, private val key: String) : Translator {
         val dst = Langs.forLibre(to)
 
         val cacheKey = "$endpoint|$dst|$t"
-        cache[cacheKey]?.let { return it }
+        synchronized(cache) { cache[cacheKey] }?.let { return it }
 
-        val out = StringBuilder()
-        chunk(t, 1800).forEach { c ->
+        val result = translateChunked(t, 1800, onPartial) { c ->
             val payload = JSONObject()
                 .put("q", c)
                 .put("source", AUTO_LIBRE)
                 .put("target", dst)
                 .put("format", "text")
-                .put("api_key", key)
+            if (key.isNotEmpty()) payload.put("api_key", key)
             val body = post("$endpoint/translate", payload.toString())
-            val text2 = runCatching { JSONObject(body).optString("translatedText") }.getOrNull()
-            if (text2.isNullOrBlank()) throw TranslationException("No translation in the response: ${body.take(120)}")
-            if (out.isNotEmpty()) out.append(' ')
-            out.append(text2)
-            onPartial(out.toString())
+            val out = runCatching { JSONObject(body).optString("translatedText") }.getOrNull()
+            if (out.isNullOrBlank()) throw TranslationException("No translation in the response: ${body.take(120)}")
+            out
         }
-        val result = out.toString()
-        cache[cacheKey] = result
+        synchronized(cache) { cache[cacheKey] = result }
         return result
     }
 }
 
+/**
+ * Splits PDF text into paragraphs. Lines inside a paragraph are joined: PDF text
+ * is hard-wrapped, and translating half sentences gives poor results.
+ */
+fun paragraphs(text: String): List<String> =
+    text.split(Regex("\\n\\s*\\n"))
+        .map { it.replace(Regex("\\s*\\n\\s*"), " ").trim() }
+        .filter { it.isNotEmpty() }
+
+/** Translates paragraph by paragraph, each split into request-sized chunks, keeping the order. */
+private suspend fun translateChunked(
+    text: String,
+    maxBytes: Int,
+    onPartial: (String) -> Unit,
+    translateOne: suspend (String) -> String
+): String {
+    val paras = paragraphs(text)
+    val out = StringBuilder()
+    paras.forEachIndexed { i, para ->
+        if (i > 0) out.append("\n\n")
+        chunk(para, maxBytes).forEachIndexed { j, c ->
+            if (j > 0) out.append(' ')
+            out.append(translateOne(c))
+            onPartial(out.toString())
+        }
+    }
+    return out.toString()
+}
+
+private fun utf8Len(s: CharSequence): Int {
+    var n = 0
+    var i = 0
+    while (i < s.length) {
+        val c = s[i]
+        n += when {
+            c.code < 0x80 -> 1
+            c.code < 0x800 -> 2
+            Character.isHighSurrogate(c) && i + 1 < s.length && Character.isLowSurrogate(s[i + 1]) -> { i++; 4 }
+            else -> 3
+        }
+        i++
+    }
+    return n
+}
+
+/**
+ * Splits [text] into pieces of at most [maxBytes] UTF-8 bytes, in order.
+ * Prefers sentence ends, then spaces; text without spaces (Chinese, Japanese)
+ * is cut at code point boundaries.
+ */
 internal fun chunk(text: String, maxBytes: Int = 440): List<String> {
-    val words = text.split(Regex("\\s+")).filter { it.isNotBlank() }
+    val t = text.trim()
+    if (t.isEmpty()) return emptyList()
+    if (utf8Len(t) <= maxBytes) return listOf(t)
+
+    // Sentence-like units, keeping their punctuation. CJK full stops count too.
+    val units = Regex("[^.!?。！？]*[.!?。！？]+\\s*|[^.!?。！？]+").findAll(t).map { it.value }.toList().ifEmpty { listOf(t) }
+
     val out = ArrayList<String>()
     val sb = StringBuilder()
-    var bytes = 0
-    for (w in words) {
-        val wb = w.toByteArray(Charsets.UTF_8).size + 1
-        if (wb > maxBytes) {
-            var i = 0
-            while (i < w.length) {
-                val end = (i + maxBytes / 2).coerceAtMost(w.length)
-                val piece = w.substring(i, end)
-                out += piece
-                i = end
-            }
-            continue
-        }
-        if (bytes + wb > maxBytes && sb.isNotEmpty()) {
-            out += sb.toString().trim()
-            sb.setLength(0)
-            bytes = 0
-        }
-        sb.append(w).append(' ')
-        bytes += wb
+    fun flush() {
+        val s = sb.toString().trim()
+        if (s.isNotEmpty()) out += s
+        sb.setLength(0)
     }
-    if (sb.isNotBlank()) out += sb.toString().trim()
-    return out
+    fun addPiece(piece: String) {
+        if (utf8Len(sb) + utf8Len(piece) > maxBytes) flush()
+        if (utf8Len(piece) <= maxBytes) {
+            sb.append(piece)
+            return
+        }
+        // Too long on its own: hard split at code point boundaries.
+        var i = 0
+        val cur = StringBuilder()
+        while (i < piece.length) {
+            val cp = piece.codePointAt(i)
+            val chars = Character.charCount(cp)
+            val next = piece.substring(i, i + chars)
+            if (utf8Len(cur) + utf8Len(next) > maxBytes) {
+                out += cur.toString().trim()
+                cur.setLength(0)
+            }
+            cur.append(next)
+            i += chars
+        }
+        sb.append(cur)
+    }
+    for (unit in units) {
+        if (utf8Len(unit) <= maxBytes) {
+            addPiece(unit)
+        } else {
+            // Long sentence: go word by word (keeping the separating spaces).
+            Regex("\\S+\\s*").findAll(unit).forEach { addPiece(it.value) }
+        }
+    }
+    flush()
+    return out.filter { it.isNotEmpty() }
 }
+
+private fun networkError(e: IOException) =
+    NetworkException("No connection to the translation service (${e.message ?: e.javaClass.simpleName}).")
 
 private suspend fun get(url: String): String = withContext(Dispatchers.IO) {
     val conn = URL(url).openConnection() as HttpURLConnection
     conn.connectTimeout = 15000
     conn.readTimeout = 25000
-    conn.setRequestProperty("User-Agent", "Oxu/1.0 (Android)")
+    conn.setRequestProperty("User-Agent", USER_AGENT)
     try {
         readResponse(conn)
+    } catch (e: IOException) {
+        throw networkError(e)
     } finally {
         conn.disconnect()
     }
@@ -180,15 +289,17 @@ private suspend fun get(url: String): String = withContext(Dispatchers.IO) {
 
 private suspend fun post(url: String, body: String): String = withContext(Dispatchers.IO) {
     val conn = URL(url).openConnection() as HttpURLConnection
-    conn.requestMethod = "POST"
-    conn.doOutput = true
-    conn.connectTimeout = 15000
-    conn.readTimeout = 30000
-    conn.setRequestProperty("Content-Type", "application/json")
-    conn.setRequestProperty("User-Agent", "Oxu/1.0 (Android)")
-    conn.outputStream.use { it.write(body.toByteArray(Charsets.UTF_8)) }
     try {
+        conn.requestMethod = "POST"
+        conn.doOutput = true
+        conn.connectTimeout = 15000
+        conn.readTimeout = 30000
+        conn.setRequestProperty("Content-Type", "application/json")
+        conn.setRequestProperty("User-Agent", USER_AGENT)
+        conn.outputStream.use { it.write(body.toByteArray(Charsets.UTF_8)) }
         readResponse(conn)
+    } catch (e: IOException) {
+        throw networkError(e)
     } finally {
         conn.disconnect()
     }

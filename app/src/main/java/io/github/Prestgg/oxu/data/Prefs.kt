@@ -55,6 +55,15 @@ class Prefs(app: Context) {
             sp.edit().putString(K_KEY, v.trim()).apply()
         }
 
+    private val fallbackState = mutableStateOf(sp.getBoolean(K_FALLBACK, true))
+    /** Online services fall back to downloaded offline languages when there is no connection. */
+    var offlineFallback: Boolean
+        get() = fallbackState.value
+        set(v) {
+            fallbackState.value = v
+            sp.edit().putBoolean(K_FALLBACK, v).apply()
+        }
+
     private val recentsState = mutableStateOf(loadRecents())
     val recents: List<RecentDoc> get() = recentsState.value
 
@@ -104,6 +113,8 @@ class Prefs(app: Context) {
     companion object {
         const val BACKEND_MYMEMORY = "mymemory"
         const val BACKEND_LIBRE = "libre"
+        const val BACKEND_OFFLINE = "offline"
+        private const val K_FALLBACK = "offline_fallback"
         private const val K_FONT = "font_size"
         private const val K_TARGET = "target_lang"
         private const val K_BACKEND = "backend"

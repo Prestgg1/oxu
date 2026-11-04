@@ -15,4 +15,4 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "oxu"
-include(":app")
+include(":app", ":bergamot")

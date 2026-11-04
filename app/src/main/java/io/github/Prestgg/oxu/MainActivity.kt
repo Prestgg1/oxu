@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import io.github.Prestgg.oxu.ui.AppState
 import io.github.Prestgg.oxu.ui.HomeScreen
 import io.github.Prestgg.oxu.ui.LanguagePicker
+import io.github.Prestgg.oxu.ui.OfflineLanguagesScreen
 import io.github.Prestgg.oxu.ui.OxuTheme
 import io.github.Prestgg.oxu.ui.ReaderScreen
 import io.github.Prestgg.oxu.ui.Screen
@@ -65,6 +66,8 @@ class MainActivity : ComponentActivity() {
                             Screen.HOME -> HomeScreen(app)
 
                             Screen.SETTINGS -> SettingsScreen(app) { app.go(Screen.HOME) }
+
+                            Screen.OFFLINE -> OfflineLanguagesScreen(app) { app.go(Screen.SETTINGS) }
 
                             Screen.READER -> ReaderScreen(app) {
                                 app.closeDoc()
